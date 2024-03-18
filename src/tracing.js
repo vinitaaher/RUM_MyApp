@@ -57,17 +57,17 @@ import { getCLS, getFCP, getFID, getINP, getLCP} from 'web-vitals';
 
 
 
-     const dummyData = [
-         { name: 'dummy_metric_1', delta: 10 },
-         { name: 'dummy_metric_2', delta: 20 },
-         { name: 'dummy_metric_3', delta: 30 },
-         // Add more dummy data as needed
-     ];
+     // const dummyData = [
+     //     { name: 'dummy_metric_1', delta: 10 },
+     //     { name: 'dummy_metric_2', delta: 20 },
+     //     { name: 'dummy_metric_3', delta: 30 },
+     //     // Add more dummy data as needed
+     // ];
 
      // Call recordWebVitals with each dummy data entry
-     dummyData.forEach(data => {
-         recordWebVitals(data);
-     });
+     // dummyData.forEach(data => {
+     //     recordWebVitals(data);
+     // });
 
      // Callback to increment the counter for each Web Vitals metric
             function recordWebVitals({ name, delta }) {
