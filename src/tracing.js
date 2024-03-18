@@ -75,8 +75,8 @@ import { getCLS, getFCP, getFID, getINP, getLCP} from 'web-vitals';
             }
 
 
-//         getCLS(recordWebVitals);
-//          getLCP(recordWebVitals);
+         getCLS(recordWebVitals);
+         getLCP(recordWebVitals);
 //        interval = setInterval(() => {
 //          getCLS(recordWebVitals);
 //          getLCP(recordWebVitals);
