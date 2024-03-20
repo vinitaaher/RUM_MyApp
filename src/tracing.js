@@ -1,119 +1,60 @@
 
 import { DiagConsoleLogger, DiagLogLevel, diag, metrics } from '@opentelemetry/api';
 import {OTLPMetricExporter} from '@opentelemetry/exporter-metrics-otlp-http';
-import {MeterProvider,PeriodicExportingMetricReader,ConsoleMetricExporter} from '@opentelemetry/sdk-metrics';
-import { getCLS, getFCP, getFID, getINP, getLCP} from 'web-vitals';
+import {MeterProvider,PeriodicExportingMetricReader,ConsoleMetricExporter, AggregationTemporality,View,InstrumentType} from '@opentelemetry/sdk-metrics';
+ import { onFID, onLCP, onCLS} from 'web-vitals';
+ import { Resource } from '@opentelemetry/resources';
 
+                  // Metrics
 
-//  console.log('STARTING METRICS');
-//  const meterProvider = new MeterProvider();
-//
-//   metrics.setGlobalMeterProvider(meterProvider);
-//
-//   let meter = meterProvider.getMeter('web-vitals-meter');
-//
-//    const observableCounter = meter.createObservableCounter('web_vitals', {
-//        description: 'Web Vitals metric',
-//    });
-//
-//    let counter = 0;
-//    const attributes = { pid:'name11', environment: 'staging' };
-//
-//    console.log(counter);
-//    // Register a single-instrument callback to the async instrument.
-//    observableCounter.addCallback(async (observableResult) => {
-//       observableResult.observe(counter, attributes);
-//    });
-//
-//    const exporter =new ConsoleMetricExporter();
-//         meterProvider.addMetricReader(new PeriodicExportingMetricReader({
-//    //        exporter: new OTLPMetricExporter(),
-//            exporter:exporter,
-//            exportIntervalMillis: 1000
-//          }));
-//
-//        // Record metrics
-//        setInterval(() => {
-//          counter++;
-//        }, 1000);
-
-
-    let interval;
-    console.log('STARTING METRICS');
-    const meterProvider = new MeterProvider();
-    metrics.setGlobalMeterProvider(meterProvider);
-    let meter = meterProvider.getMeter('web-vitals-meter');
-    const exporter =new ConsoleMetricExporter();
-
-     meterProvider.addMetricReader(new PeriodicExportingMetricReader({
-        exporter: new OTLPMetricExporter(),
+   let interval;
+   console.log('STARTING METRICS');
+   const meterProvider = new MeterProvider();
+   metrics.setGlobalMeterProvider(meterProvider);
+   let meter = meterProvider.getMeter('web-vitals-meter');
+   const exporter =new OTLPMetricExporter();
+   exporter.selectAggregationTemporality(InstrumentType.UP_DOWN_COUNTER,AggregationTemporality.DELTA);
+   meterProvider.addMetricReader(new PeriodicExportingMetricReader({
+       exporter: exporter,
 //        exporter:exporter,
-        exportIntervalMillis: 1000
-      }));
+       exportIntervalMillis: 1000
+     }));
 
-       const requestCounter = meter.createCounter('Web Vitals', {
-          description: 'Web Vitals',
-        });
-
-
-
-     // const dummyData = [
-     //     { name: 'dummy_metric_1', delta: 10 },
-     //     { name: 'dummy_metric_2', delta: 20 },
-     //     { name: 'dummy_metric_3', delta: 30 },
-     //     // Add more dummy data as needed
-     // ];
-
-     // Call recordWebVitals with each dummy data entry
-     // dummyData.forEach(data => {
-     //     recordWebVitals(data);
-     // });
-
-     // Callback to increment the counter for each Web Vitals metric
-            function recordWebVitals({ name, delta }) {
-                requestCounter.add(delta, { name });
-            }
-
-
-         getCLS(recordWebVitals);
-         getLCP(recordWebVitals);
-//        interval = setInterval(() => {
-//          getCLS(recordWebVitals);
-//          getLCP(recordWebVitals);
-//        }, 1000);
+    const upDownCounter = meter.createUpDownCounter('Web Vitals', {
+      description: 'Example of a UpDownCounter',
+    });
 
 
 
+  function onReport(metric) {
+               console.log(metric.name+'='+metric.value);
+               const attributes = { name: metric.name ,
+                id:metric.id ,
+                rating:metric.rating,
+                delta:metric.delta,
+                value:metric.value,
+                entries:JSON.stringify(metric.entries),
+                navigationType:metric.navigationType};
+//                vitalGauge.set(metric.delta);
+              upDownCounter.add(metric.value,attributes);
+           }
+
+// Capture First Input Delay
+  onFID((metric) => {
+    onReport(metric);
+  });
 
 
+  // Capture Cumulative Layout Shift
+  onCLS((metric) => {
+    onReport(metric);
+  });
 
 
-//  let interval;
-//  console.log('STARTING METRICS');
-//
-//  const meterProvider = new MeterProvider();
-//
-//  metrics.setGlobalMeterProvider(meterProvider);
-//
-//  let meter = meterProvider.getMeter('web-vitals-meter');
-//
-//
-//    const exporter =new ConsoleMetricExporter();
-//
-//     meterProvider.addMetricReader(new PeriodicExportingMetricReader({
-//        exporter: new OTLPMetricExporter(),
-//        exportIntervalMillis: 1000
-//      }));
-//
-//       const requestCounter = meter.createCounter('CLS', {
-//          description: 'Web Vitals',
-//        });
-//
-//
-//        const attributes = { environment: 'Test' , value:0};
-//
-//         requestCounter.add(1, attributes);
-//
-//        interval = setInterval(() => {
-//          requestCounter.add(1, attributes);
-//        }, 1000);
+  // Capture Largest Contentful Paint
+  onLCP((metric) => {
+    onReport(metric);
+  });
+
+
+  // tracing

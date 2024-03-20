@@ -1,0 +1,73 @@
+version: "3"
+services:
+
+  # Prometheus
+  # Prometheus
+  prometheus:
+    image: quay.io/prometheus/prometheus:v2.49.1
+    container_name: prometheus
+    command:
+      - --web.console.templates=/etc/prometheus/consoles
+      - --web.console.libraries=/etc/prometheus/console_libraries
+      - --storage.tsdb.retention.time=1h
+      - --config.file=/etc/prometheus/prometheus-config.yaml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+      - --web.route-prefix=/
+      - --enable-feature=exemplar-storage
+      - --enable-feature=otlp-write-receiver
+    volumes:
+      - ./prometheus/prometheus-config.yaml:/etc/prometheus/prometheus-config.yaml
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+
+  # Collector
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:0.96.0
+    container_name: otel-col
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+    restart: unless-stopped
+    command: [ "--config=/etc/otelcol-config.yml"]
+    volumes:
+      - ./collector-config.yaml:/etc/otelcol-config.yml
+    ports:
+      - "9464:9464"
+      - "4317:4317"
+      - "4318:4318"
+
+  tempo:
+    image: grafana/tempo:2.1.0
+    command:
+      - "-storage.trace.backend=local"                  # tell tempo where to permanently put traces
+      - "-storage.trace.local.path=/tmp/tempo/traces"
+      - "-storage.trace.wal.path=/tmp/tempo/wal"        # tell tempo where to store the wal
+      - "-auth.enabled=false"                           # disables the requirement for the X-Scope-OrgID header
+      - "-server.http-listen-port=3200"
+    ports:
+      - "3200:3200"
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: grafana
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+    restart: unless-stopped
+    environment:
+      - "GF_INSTALL_PLUGINS=grafana-opensearch-datasource"
+    volumes:
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    ports:
+      - "3000:3000"
+
+
